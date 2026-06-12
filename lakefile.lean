@@ -16,3 +16,6 @@ require "leanprover-community" / "mathlib" @ git "v4.28.0"
 @[default_target]
 lean_lib «GccLeanLab» where
   -- add any library configuration options here
+
+lean_exe «gccvectors» where
+  root := `GccLeanLab.VectorGen
