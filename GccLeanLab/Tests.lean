@@ -266,6 +266,12 @@ example : bgDerivMul (powFlow 3) ⟨2, by norm_num⟩ = Real.exp 3 :=
 example (f : ℝ → ℝ) (a : ℝ) :
     f007Deriv (fun _ => 1) (fun _ => 1) id id f a = deriv f a :=
   f007_classical f a
+
+-- and a concrete, non-vacuous instance: a genuinely differentiable f with
+-- a nonzero derivative value flowing through the formula
+example : f007Deriv (fun _ => 1) (fun _ => 1) id id (fun t : ℝ => t ^ 2) 1 = 2 := by
+  rw [f007_classical]
+  simp
 example (f : ℝ → ℝ) (a : ℝ) :
     f007Deriv (fun _ => 1) (fun _ => 1) Real.log Real.log f a
       = a * deriv f a / f a :=

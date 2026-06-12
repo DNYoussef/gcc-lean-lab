@@ -83,9 +83,10 @@ theorem bgTransform_contracts {k g : ℝ} (hk0 : 0 < k) (hk : k < 1 / 2)
         linarith
     _ = |g| := Real.rpow_one _
 
-/-- Below the window (k <= 0) the transform no longer vanishes with g: small
-gradients are strictly amplified, i.e. the noise floor is lifted. This is
-why the Python guardrail has `k_min > 0`. -/
+/-- Below the window (k <= 0), every gradient with 0 < |g| < 1 is strictly
+amplified (pointwise; the divergence of `|g| ^ (2k)` as g -> 0 for k < 0 is
+the limit-level reading, not proved here). This is why the Python guardrail
+has `k_min > 0`. -/
 theorem bgTransform_amplifies_of_k_le_zero {k g : ℝ} (hk : k ≤ 0)
     (hg0 : 0 < |g|) (hg1 : |g| < 1) : |g| < |bgTransform k g| := by
   have hgne : g ≠ 0 := abs_pos.mp hg0
@@ -201,7 +202,14 @@ theorem bgDerivMul_powFlow (n : ℝ) (x : PosReal) :
 lemmas prove the formula subsumes the classical, geometric, and bigeometric
 derivatives - the keystone the Python `UnifiedDerivative` implements. -/
 
-/-- The F007 weighted unified derivative. -/
+/-- The F007 weighted unified derivative.
+
+Stated over bare `deriv`: where a function is not differentiable, Mathlib's
+`deriv` is 0 and the formula degrades accordingly (0-division yields 0 in
+real-field convention). Generators alpha/beta are assumed smooth and
+invertible by USERS of the formula; the specialization lemmas below are
+unconditional identities about the formula itself - the honest analytic
+statement under hypotheses is `f007_geometric_eq_deriv_log`. -/
 def f007Deriv (u v alpha beta : ℝ → ℝ) (f : ℝ → ℝ) (a : ℝ) : ℝ :=
   (v (f a) / u a) * deriv beta (f a) * deriv f a / deriv alpha a
 
@@ -211,7 +219,10 @@ theorem f007_classical (f : ℝ → ℝ) (a : ℝ) :
   simp [f007Deriv]
 
 /-- Geometric specialization: log codomain generator yields `f' / f`, the
-log-derivative whose exponential is the Grossman geometric derivative. -/
+log-derivative whose exponential is the Grossman geometric derivative.
+An unconditional FORMULA identity (`deriv f a` appears on both sides, junk
+values included); see `f007_geometric_eq_deriv_log` for the version with
+differentiability hypotheses. -/
 theorem f007_geometric (f : ℝ → ℝ) (a : ℝ) :
     f007Deriv (fun _ => 1) (fun _ => 1) id Real.log f a
       = deriv f a / f a := by
@@ -227,7 +238,8 @@ theorem f007_geometric_eq_deriv_log {f : ℝ → ℝ} {a : ℝ}
   rw [f007_geometric, deriv.log hf hfa]
 
 /-- Bigeometric specialization: log generators on BOTH axes yield
-`a * f'(a) / f(a)`, the log of `D_BG[f](a) = exp(a f'/f)`. -/
+`a * f'(a) / f(a)`, the log of `D_BG[f](a) = exp(a f'/f)`. Unconditional
+formula identity, same caveat as `f007_geometric`. -/
 theorem f007_bigeometric (f : ℝ → ℝ) (a : ℝ) :
     f007Deriv (fun _ => 1) (fun _ => 1) Real.log Real.log f a
       = a * deriv f a / f a := by

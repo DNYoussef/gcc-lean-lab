@@ -14,11 +14,16 @@ on Windows).
 
 namespace GCC.VectorGen
 
-/-- Float shadow of `GCC.bgTransform`: `g * |g| ^ (2k-1)`. -/
+/-- Float shadow of `GCC.bgTransform`: `g * |g| ^ (2k-1)`. The base is
+abs-guarded like the Real version; the one Float-only edge is g = 0 with a
+negative exponent (0 * inf = NaN), which the vector grids exclude - the
+Real theorem `bgTransform_zero` covers g = 0 exactly. -/
 def bgTransformF (k g : Float) : Float :=
   g * (Float.abs g) ^ (2.0 * k - 1.0)
 
-/-- Float shadow of `GCC.kOf`: `slope * log10 L + intercept`. -/
+/-- Float shadow of `GCC.kOf`. `Float.log10` is the IEEE 754 approximation
+of `Real.logb 10` - functional form identical, values differ by rounding,
+which is why consumers assert rtol tolerance, never equality. -/
 def kOfF (slope intercept L : Float) : Float :=
   slope * Float.log10 L + intercept
 
