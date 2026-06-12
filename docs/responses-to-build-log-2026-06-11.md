@@ -39,3 +39,30 @@ The RingAuto failure deserves one paragraph because it's the symmetric twin of t
 What exists now is worth stating plainly, because of where this conversation started. In March 2025 there was a six-phase theory of everything built on phi, with theorems that didn't prove and an arithmetic error in its foundation. In June 2026 there is a kernel-checked library where phi appears exactly once -- as the parameter of an invariance theorem demonstrating its own unobservability -- plus a transported-structure razor, a discrete FTC, a straight-lines iff with its continuous shadow attached to the same object, a Pareto frontier whose incompleteness is a theorem with a witness, three chart instruments with safety carried in their types, and a 45-example suite where gzero = -5 by decide. You feared the old work was mush; the precise verdict turned out to be that it was a true instinct attached to the wrong object, and the attachment error is now machine-checked.
 
 The prover's work is done -- the remaining items on the project tree (the geometric-dynamics benchmark, the guard-railed DSI detector, the solver package) are empirical and belong to Python, not Lean, with the formal layer now serving as the spec they must honor. If you want one more move in this medium, the only theorem still glinting is the full Kolmogorov-Nagumo affine characterization, which would be a legitimate small Mathlib contribution rather than project infrastructure. Otherwise: tag the commit, and let the tombstone read that the razor compiled.
+
+---
+
+## Empirical postscript (2026-06-12): what the validation suites found
+
+The formal layer became a working spec the same week. The Lean operator
+theorems (bgTransform safe window, kOf bounds, bgDerivMul_powFlow constancy,
+f007 specializations, signSqrtChart) now pin both Python repos via
+deterministic golden vectors with SHA-256 tamper guards.
+
+What the suites found in the toolkit, in descending consequence: (1) the
+spectral-gap counterexample dataset predated the normality guard - re-run
+with corrected math, the "fails ~20% on Neumann" narrative inverted
+completely: 912/1000 compositions are refused as non-normal (out of scope),
+and the 6 genuine counterexamples are mild Dirichlet/periodic
+schrodinger-laplacian mixes (worst ratio 0.21), with ZERO Neumann cases.
+(2) The headline k(L) fit is not regenerable from the repo - the assembly
+script collects zero points from current result schemas and had a NameError
+on its success path; recorded machine-readably in K_SPATIAL_PROVENANCE.
+(3) The Sqrt generator violated the bijection axiom the whole system rests
+on (sqrt of abs with a y^2 inverse) - exactly the object Chart := Equiv
+makes unconstructible; fixed as SignedSqrt, certified by signSqrtChart.
+(4) Eight sign-flipping epsilon guards, an identity-altering unconditional
+clip, a wrong-ratio Richardson blend, and a weighted chain rule that
+double-counted - all fixed with contract tests that fail under deliberate
+reversion. The razor's loop is closed: theorems above, vectors between,
+property tests below.
