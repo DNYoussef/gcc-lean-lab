@@ -16,6 +16,7 @@ Test philosophy, matching the relay's own doctrine:
 -/
 
 import GccLeanLab.Capstone
+import GccLeanLab.MetaCalculus
 
 namespace GCC.Tests
 
@@ -231,5 +232,50 @@ example (x : OpenUnit) (v t : ℝ) :
 example (g : OpenUnit → ℝ) (h : ℝ) (x : OpenUnit) :
     0 < (logisticEuler g h x).1 ∧ (logisticEuler g h x).1 < 1 :=
   logisticEuler_mem g h x
+
+/-! ## 7. Meta-calculus operator layer (MetaCalculus.lean witnesses) -/
+
+-- the k-guardrail spec, at concrete values
+example : bgTransform 0.3 (0 : ℝ) = 0 := bgTransform_zero 0.3
+example : bgTransform 0.3 (-4 : ℝ) < 0 := bgTransform_neg_of_neg 0.3 (by norm_num)
+example : bgTransform 0.3 (1 : ℝ) = 1 := bgTransform_fixed 0.3 (by norm_num)
+example : |bgTransform 0.16 (3 : ℝ)| < |(3 : ℝ)| :=
+  bgTransform_contracts (by norm_num) (by norm_num) (by norm_num)
+example : |(0.5 : ℝ)| < |bgTransform (-0.1) (0.5 : ℝ)| :=
+  bgTransform_amplifies_of_k_le_zero (by norm_num) (by norm_num) (by norm_num)
+example : |(3 : ℝ)| < |bgTransform 0.8 (3 : ℝ)| :=
+  bgTransform_expands_of_half_lt_k (by norm_num) (by norm_num)
+
+-- k(L) structural facts at the production constants: the affine form is
+-- antitone, and over [1, 10^12] its range EXITS the safe window (the lower
+-- end is negative) - which is why the Python optimizer path clamps k
+example : kOf (-0.0137) 0.1593 1 = 0.1593 := by
+  norm_num [kOf]
+example (L : ℝ) (h1 : 1 ≤ L) (h2 : L ≤ (10 : ℝ) ^ (12 : ℝ)) :
+    kOf (-0.0137) 0.1593 L ∈ Set.Icc (0.1593 + 12 * (-0.0137)) 0.1593 :=
+  kOf_mem_Icc (by norm_num) h1 h2
+example : (0.1593 : ℝ) + 12 * (-0.0137) < 0 := by norm_num
+
+-- Grossman-Katz power-law constancy, concrete instance
+example : bgDeriv (powFlow 3) ⟨2, by norm_num⟩ = 3 :=
+  bgDeriv_powFlow 3 ⟨2, by norm_num⟩
+example : bgDerivMul (powFlow 3) ⟨2, by norm_num⟩ = Real.exp 3 :=
+  bgDerivMul_powFlow 3 ⟨2, by norm_num⟩
+
+-- F007 subsumes the classical derivative (abstract instantiation)
+example (f : ℝ → ℝ) (a : ℝ) :
+    f007Deriv (fun _ => 1) (fun _ => 1) id id f a = deriv f a :=
+  f007_classical f a
+example (f : ℝ → ℝ) (a : ℝ) :
+    f007Deriv (fun _ => 1) (fun _ => 1) Real.log Real.log f a
+      = a * deriv f a / f a :=
+  f007_bigeometric f a
+
+-- the audit tombstone: the corrected odd square root is a genuine chart;
+-- both round trips hold by construction (the Python original failed them)
+example (x : ℝ) : signSqrtChart.symm (signSqrtChart x) = x :=
+  signSqrtChart.symm_apply_apply x
+example (y : ℝ) : signSqrtChart (signSqrtChart.symm y) = y :=
+  signSqrtChart.apply_symm_apply y
 
 end GCC.Tests

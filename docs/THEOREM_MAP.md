@@ -130,10 +130,51 @@ multiplicative Euler, sigmoid/logit round trips, logitChart equivalence,
 boundedness safety. Each is a concrete instantiation that fails to
 elaborate if the parent theorem's typeclass assumptions are wrong.
 
-## Planned (Phase 3 of META_CALCULUS_VALIDATION_PLAN)
+## 4. GccLeanLab/MetaCalculus.lean (the toolkit operator layer)
 
-`GccLeanLab/MetaCalculus.lean`: `geomDeriv`, `bgDeriv`, `bgDerivMul` +
-power-law constancy (`bgDerivMul_powFlow = exp n`); F007 unified derivative
-with classical/geometric/bigeometric specialization lemmas; `bgTransform`
-contraction/amplification theorems (the k-guardrail spec); `kOf` structural
-monotonicity/bounds (never the fitted coefficients).
+### Gradient transform safe window (spec for the Python k-guardrail)
+
+| Name | Meaning | Toolkit/agent-maker concept |
+|---|---|---|
+| `bgTransform` | `g * \|g\| ^ (2k-1)` (rpow) | `BigeometricTransform.transform` |
+| `bgTransform_zero` | transform fixes 0 | - |
+| `abs_bgTransform` | magnitude law `\|out\| = \|g\| ^ (2k)` | - |
+| `bgTransform_pos_of_pos` / `bgTransform_neg_of_neg` | sign preservation | `test_bigeometric_merge_preserves_common_negative_sign` |
+| `bgTransform_fixed` | unit magnitudes are fixed points | - |
+| `bgTransform_contracts` | 0 < k < 1/2 contracts large gradients - the anti-explosion theorem | `BigeometricConfig.k_max = 0.5` |
+| `bgTransform_amplifies_of_k_le_zero` | k <= 0 lifts the noise floor | `BigeometricConfig.k_min > 0` |
+| `bgTransform_expands_of_half_lt_k` | k > 1/2 re-amplifies | guardrail upper bound |
+
+### k(L) structural facts (shape only; fitted values stay empirical)
+
+| Name | Meaning |
+|---|---|
+| `kOf` | `slope * logb 10 L + intercept` |
+| `kOf_strictAntiOn` | negative slope -> strictly decreasing on L > 0 |
+| `kOf_mem_Icc` | on [1, 10^12] the value stays in [intercept + 12 slope, intercept]; at production constants the lower end is NEGATIVE (witnessed in Tests.lean) - why the optimizer path clamps |
+
+### Bigeometric derivative and Grossman-Katz constancy
+
+| Name | Meaning | Toolkit concept |
+|---|---|---|
+| `powFlow` | `x ^ n` on PosReal | power-law test family |
+| `bgDeriv` / `bgDerivMul` | log-log derivative; `exp` of it | `BigeometricDerivative` |
+| `bgDeriv_powFlow` | `bgDeriv (powFlow n) = n` | log-log straight lines |
+| `bgDerivMul_powFlow` | `D_BG[x^n] = exp n`, x-independent | `verify_power_law`, `constancy_analysis_v2.json` |
+
+### F007 unified derivative (Grossman 1981)
+
+| Name | Meaning | Toolkit concept |
+|---|---|---|
+| `f007Deriv` | `(v(f a)/u a) * beta'(f a) * f'(a) / alpha'(a)` | `UnifiedDerivative.__call__` (core/derivatives.py:487) |
+| `f007_classical` | identity charts, unit weights -> `deriv f` | classical specialization |
+| `f007_geometric` | log codomain -> `f'/f` (elasticity, NOT exp-wrapped) | the F007-vs-NNC distinction in the module header |
+| `f007_geometric_eq_deriv_log` | agrees with `deriv (log . f)` under hypotheses | chain-rule honesty |
+| `f007_bigeometric` | log both axes -> `a f'/f` | L_BG elasticity |
+
+### The audit tombstone (AUDIT-2026-06-12, A1)
+
+| Name | Meaning | Toolkit concept |
+|---|---|---|
+| `signSqrt` / `signSqrtInv` | odd square root and its genuine inverse | `SignedSqrt` (corrected generator) |
+| `signSqrtChart` | the corrected odd sqrt IS a chart: both round trips proved - the proofs Python's old `Sqrt` silently failed | `test_generator_round_trip` |
