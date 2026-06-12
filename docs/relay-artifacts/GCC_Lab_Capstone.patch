@@ -1,0 +1,88 @@
+--- /mnt/data/GCC_Mathlib_Lab_WithAnalysis.lean	2026-06-12 00:21:50.659321799 +0000
++++ /mnt/data/GCC_Mathlib_Lab_Capstone.lean	2026-06-12 00:22:45.239833206 +0000
+@@ -9,8 +9,11 @@
+   discrete FTC, straight-line iff, generated means, and Pareto soundness;
+ * remove decorative enum-style claims entirely.
+ 
+-There are no intentional proof placeholders in this file. Analytic obligations with
+-`sorry`s live in `GCC_Analysis_Obligations.lean` instead of being erased.
++There are no intentional proof placeholders in this file. The former analytic
++obligations are discharged in §7 and assembled into chart instruments below.
++
++Static status: this file has not been compiled in this runtime; no Lean/Lake
++toolchain is installed here.
+ 
+ Typeclass hygiene rule used here: each theorem asks for the weakest single
+ class layer it needs; inherited ancestors are not stacked as separate binders.
+@@ -260,8 +263,7 @@
+ This is the mathematical φ-demotion pattern: only invariants survive chart change. -/
+ theorem gmean_recoord {M : BMean β} (g : Chart α β) (e : MeanAuto β M)
+     (x y : α) : gmean (recoord g e) M x y = gmean g M x y := by
+-  apply g.injective
+-  change e.equiv.symm (M.m (e.equiv (g x)) (e.equiv (g y))) = M.m (g x) (g y)
++  simp only [gmean, recoord, Equiv.trans_apply, Equiv.symm_trans_apply]
+   rw [e.compat]
+   simp
+ 
+@@ -478,6 +480,22 @@
+     simpa using (hasDerivAt_const t (Real.log x₀.1)).add hlin
+   exact h.deriv
+ 
++/-- The native log-chart line is the exponential flow. -/
++theorem geometricLine_eq_expFlow (x₀ : PosReal) (r t : ℝ) :
++    geometricLine x₀ r t = expFlow x₀ r t := by
++  apply Subtype.ext
++  simp [geometricLine, nativeLine, logChart, expFlow, smul_eq_mul,
++    Real.exp_add, Real.exp_log x₀.property, mul_comm, mul_left_comm, mul_assoc]
++
++/-- Exponentials, stated on the lab's canonical `geometricLine`, have constant
++log-rate `r`. -/
++theorem logRate_geometricLine (x₀ : PosReal) (r t : ℝ) :
++    logRate (geometricLine x₀ r) t = r := by
++  have h : geometricLine x₀ r = expFlow x₀ r :=
++    funext (geometricLine_eq_expFlow x₀ r)
++  rw [h]
++  exact logRate_expFlow x₀ r t
++
+ /-- The open unit interval. -/
+ abbrev OpenUnit : Type := {x : ℝ // 0 < x ∧ x < 1}
+ 
+@@ -554,4 +572,38 @@
+   field_simp [hx_ne, hbig_ne]
+   ring
+ 
++/-- Chart-level inverse: sigmoid after logit is the identity on `OpenUnit`. -/
++theorem sigmoidToOpenUnit_logit (x : OpenUnit) :
++    sigmoidToOpenUnit (logit x) = x := by
++  exact Subtype.ext (sigmoid_logit x)
++
++/-- The logit chart `(0,1) ≃ ℝ`. Bounded states now have an honest coordinate
++instrument, parallel to `logChart` for positive states. -/
++def logitChart : Chart OpenUnit ℝ where
++  toFun := logit
++  invFun := sigmoidToOpenUnit
++  left_inv := sigmoidToOpenUnit_logit
++  right_inv := logit_sigmoid
++
++/-- A native line in logit coordinates: logistic-coordinate straight motion. -/
++def logisticLine (x₀ : OpenUnit) (v t : ℝ) : OpenUnit :=
++  nativeLine logitChart x₀ v t
++
++/-- Logit coordinates make logistic lines additive: the bounded sibling of
++`geometricLine_logCoord`. -/
++theorem logisticLine_logitCoord (x₀ : OpenUnit) (v t : ℝ) :
++    logitChart (logisticLine x₀ v t) = logitChart x₀ + t * v := by
++  simpa [logisticLine, smul_eq_mul] using
++    apply_nativeLine (ψ := logitChart) (x₀ := x₀) (v := v) (t := t)
++
++/-- Logistic Euler step: boundedness is carried by the chart. -/
++def logisticEuler (g : OpenUnit → ℝ) (h : ℝ) (x : OpenUnit) : OpenUnit :=
++  chartEuler logitChart g h x
++
++/-- The logistic Euler step cannot leave `(0,1)`. Illegal bounded states are
++unrepresentable by construction. -/
++theorem logisticEuler_mem (g : OpenUnit → ℝ) (h : ℝ) (x : OpenUnit) :
++    0 < (logisticEuler g h x).1 ∧ (logisticEuler g h x).1 < 1 := by
++  exact (logisticEuler g h x).property
++
+ end GCC
