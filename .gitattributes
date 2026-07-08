@@ -1,1 +1,2 @@
 golden_vectors.json -text
+*.sh text eol=lf
