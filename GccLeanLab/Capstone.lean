@@ -12,9 +12,6 @@ This is the merged Lean direction after comparing the two drafts:
 There are no intentional proof placeholders in this file. The former analytic
 obligations are discharged in §7 and assembled into chart instruments below.
 
-Static status: this file has not been compiled in this runtime; no Lean/Lake
-toolchain is installed here.
-
 Typeclass hygiene rule used here: each theorem asks for the weakest single
 class layer it needs; inherited ancestors are not stacked as separate binders.
 -/
