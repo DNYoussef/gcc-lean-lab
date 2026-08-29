@@ -1,5 +1,7 @@
-<!-- HISTORICAL: superseded by D:\Projects\_remediation-plans-2026-07-05\PRODUCTION-READINESS-PLAN.md -->
 # gcc-lean-lab - Remediation Plan (2026-07-06)
+
+> **Historical snapshot:** This plan is retained only as a record of the 2026-07-06
+> review. It is not an active work plan, and none of its phase statuses are authoritative.
 
 ## Verdict
 
