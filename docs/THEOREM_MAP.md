@@ -166,11 +166,23 @@ elaborate if the parent theorem's typeclass assumptions are wrong.
 
 | Name | Meaning | Toolkit concept |
 |---|---|---|
-| `f007Deriv` | `(v(f a)/u a) * beta'(f a) * f'(a) / alpha'(a)` | `UnifiedDerivative.__call__` (core/derivatives.py:487) |
+| `f007Deriv` | `(v(a)/u(a)) * beta'(f a) * f'(a) / alpha'(a)`; weights read at the argument (corrected 2026-11-21 from the historical `v(f a)`, matching registry F007) | `UnifiedDerivative.__call__` (core/derivatives.py) |
+| `f007_meta` | identity charts, any weights -> `(v a / u a) * f'(a)`; false under the historical reading, witness in Tests | registry F007 correction |
 | `f007_classical` | identity charts, unit weights -> `deriv f` | classical specialization |
 | `f007_geometric` | log codomain -> `f'/f` (elasticity, NOT exp-wrapped) | the F007-vs-NNC distinction in the module header |
 | `f007_geometric_eq_deriv_log` | agrees with `deriv (log . f)` under hypotheses | chain-rule honesty |
 | `f007_bigeometric` | log both axes -> `a f'/f` | L_BG elasticity |
+
+### Registry sync (2026-11-21; meta-calculus-portfolio docs/FORMULA_CLAIMS.json)
+
+| Name | Meaning | Registry entry |
+|---|---|---|
+| `metaDeriv` / `f007_eq_metaDeriv` | `D_{u,v}[f](a) = (v a / u a) * f'(a)`; equals F007 with identity charts | META_DERIVATIVE |
+| `metaDeriv_add` / `metaDeriv_const_mul` | additivity and homogeneity for fixed weights, f and g differentiable at a | META_DERIVATIVE_LINEARITY |
+| `geomDeriv` | `D_G[f](a) = exp (f'(a) / f(a))`, outer exponential included | GEOMETRIC_DERIVATIVE |
+| `geomDeriv_eq_exp_f007` / `geomDeriv_eq_exp_deriv_log` | exp of F007 with log codomain; exp of `deriv (log . f)` under hypotheses | GEOMETRIC_DERIVATIVE |
+| `geomDeriv_mul` / `geomDeriv_const` | multiplicative product rule; constants map to 1 | GEOMETRIC_DERIVATIVE |
+| `scaledPowFlow` / `bgDeriv_scaledPowFlow` / `bgDerivMul_scaledPowFlow` | `D_BG[c x^m] = e^m` for every c > 0 | BG_SLOPE_POWER_LAW |
 
 ### The audit tombstone (AUDIT-2026-06-12, A1)
 

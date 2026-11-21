@@ -12,9 +12,14 @@ Formalizes the operator core of the meta-calculus toolkit
 * the bigeometric derivative through log charts and the Grossman-Katz
   power-law constancy `D_BG[x^n] = e^n` (the toolkit's `verify_power_law`,
   checked numerically there, proved here);
-* the F007 unified derivative `(v(f a)/u a) * beta'(f a) * f'(a) / alpha'(a)`
+* the F007 unified derivative `(v(a)/u(a)) * beta'(f a) * f'(a) / alpha'(a)`
   (Grossman 1981 meta-calculus weights) with specialization lemmas showing
-  it subsumes the classical, geometric, and bigeometric derivatives.
+  it subsumes the classical, geometric, bigeometric and fixed-weight meta
+  derivatives;
+* registry sync (2026-11-21): Grossman's fixed-weight meta-derivative and
+  its linearity, the geometric derivative with its outer exponential and
+  multiplicative product rule, and the bigeometric power law for any
+  positive coefficient.
 
 Published anchors (in the toolkit's references/ tree): Grossman & Katz 1972,
 Grossman 1981 *Meta-Calculus*, Grossman 1983 *Bigeometric Calculus*,
@@ -197,8 +202,12 @@ theorem bgDerivMul_powFlow (n : ℝ) (x : PosReal) :
 
 /-! ## 4. The F007 unified derivative
 
-`D*_w f(a) = (v(f a) / u a) * beta'(f a) * f'(a) / alpha'(a)`
-(toolkit `core/derivatives.py:26-40`; Grossman 1981). The specialization
+`D*_w f(a) = (v(a) / u(a)) * beta'(f a) * f'(a) / alpha'(a)`
+(registry entry F007 in meta-calculus-portfolio docs/FORMULA_CLAIMS.json;
+toolkit `core/derivatives.py`; Grossman 1981). Both weights are read at the
+argument a. The historical form read v at f(a); the registry corrected it
+because Jane Grossman evaluates both weights at the argument. Unit-weight
+lemmas cannot tell the two apart; `f007_meta` below can. The specialization
 lemmas prove the formula subsumes the classical, geometric, and bigeometric
 derivatives - the keystone the Python `UnifiedDerivative` implements. -/
 
@@ -211,7 +220,7 @@ invertible by USERS of the formula; the specialization lemmas below are
 unconditional identities about the formula itself - the honest analytic
 statement under hypotheses is `f007_geometric_eq_deriv_log`. -/
 def f007Deriv (u v alpha beta : ℝ → ℝ) (f : ℝ → ℝ) (a : ℝ) : ℝ :=
-  (v (f a) / u a) * deriv beta (f a) * deriv f a / deriv alpha a
+  (v a / u a) * deriv beta (f a) * deriv f a / deriv alpha a
 
 /-- Classical specialization: unit weights, identity generators. -/
 theorem f007_classical (f : ℝ → ℝ) (a : ℝ) :
@@ -286,5 +295,106 @@ def signSqrtChart : Chart ℝ ℝ where
       rw [if_neg hy,
         if_neg (by linarith : ¬ (0 : ℝ) ≤ -(y ^ 2)),
         neg_neg, Real.sqrt_sq_eq_abs, abs_of_neg hylt, neg_neg]
+
+/-! ## 6. Registry sync (2026-11-21)
+
+Lean counterparts of entries in meta-calculus-portfolio docs/FORMULA_CLAIMS.json:
+F007 at non-constant weights, META_DERIVATIVE, META_DERIVATIVE_LINEARITY,
+GEOMETRIC_DERIVATIVE with its outer exponential, and BG_SLOPE_POWER_LAW for
+any positive coefficient. -/
+
+/-- With identity generators F007 is the fixed-weight meta-derivative
+`(v a / u a) * f'(a)`. Under the historical `v (f a)` reading this fails
+whenever v differs at a and f a; Tests.lean carries a concrete witness. -/
+theorem f007_meta (u v f : Real -> Real) (a : Real) :
+    f007Deriv u v id id f a = v a / u a * deriv f a := by
+  simp [f007Deriv]
+
+/-- Grossman's meta-derivative with weights u, v (registry META_DERIVATIVE). -/
+def metaDeriv (u v f : Real -> Real) (a : Real) : Real :=
+  v a / u a * deriv f a
+
+theorem f007_eq_metaDeriv (u v f : Real -> Real) (a : Real) :
+    f007Deriv u v id id f a = metaDeriv u v f a :=
+  f007_meta u v f a
+
+/-- META_DERIVATIVE_LINEARITY, additivity, for fixed weights. -/
+theorem metaDeriv_add {u v f g : Real -> Real} {a : Real}
+    (hf : DifferentiableAt Real f a) (hg : DifferentiableAt Real g a) :
+    metaDeriv u v (fun x => f x + g x) a = metaDeriv u v f a + metaDeriv u v g a := by
+  have h : HasDerivAt (fun x => f x + g x) (deriv f a + deriv g a) a :=
+    hf.hasDerivAt.add hg.hasDerivAt
+  unfold metaDeriv
+  rw [h.deriv]
+  ring
+
+/-- META_DERIVATIVE_LINEARITY, homogeneity, for fixed weights. -/
+theorem metaDeriv_const_mul {u v f : Real -> Real} {a : Real} (k : Real)
+    (hf : DifferentiableAt Real f a) :
+    metaDeriv u v (fun x => k * f x) a = k * metaDeriv u v f a := by
+  unfold metaDeriv
+  rw [deriv_const_mul k hf]
+  ring
+
+/-- Grossman-Katz geometric derivative `D_G[f](a) = exp (f'(a) / f(a))`
+(registry GEOMETRIC_DERIVATIVE, outer exponential included). -/
+def geomDeriv (f : Real -> Real) (a : Real) : Real :=
+  Real.exp (deriv f a / f a)
+
+/-- It is exp of F007 with the log codomain generator. -/
+theorem geomDeriv_eq_exp_f007 (f : Real -> Real) (a : Real) :
+    geomDeriv f a = Real.exp (f007Deriv (fun _ => 1) (fun _ => 1) id Real.log f a) := by
+  rw [f007_geometric, geomDeriv]
+
+/-- And exp of the classical derivative of log f, where f is differentiable
+and nonzero. -/
+theorem geomDeriv_eq_exp_deriv_log {f : Real -> Real} {a : Real}
+    (hf : DifferentiableAt Real f a) (hfa : Ne (f a) 0) :
+    geomDeriv f a = Real.exp (deriv (fun s => Real.log (f s)) a) := by
+  rw [geomDeriv, deriv.log hf hfa]
+
+/-- The multiplicative product rule `D_G[f g] = D_G[f] * D_G[g]`. -/
+theorem geomDeriv_mul {f g : Real -> Real} {a : Real}
+    (hf : DifferentiableAt Real f a) (hg : DifferentiableAt Real g a)
+    (hfa : Ne (f a) 0) (hga : Ne (g a) 0) :
+    geomDeriv (fun x => f x * g x) a = geomDeriv f a * geomDeriv g a := by
+  have h : HasDerivAt (fun x => f x * g x) (deriv f a * g a + f a * deriv g a) a :=
+    hf.hasDerivAt.mul hg.hasDerivAt
+  unfold geomDeriv
+  rw [<- Real.exp_add, h.deriv]
+  congr 1
+  dsimp only
+  field_simp
+
+/-- A constant has geometric derivative 1, the multiplicative zero. -/
+theorem geomDeriv_const (c a : Real) :
+    geomDeriv (fun _ => c) a = 1 := by
+  simp [geomDeriv]
+
+/-- Scaled power flow `c * x ^ m` on positive reals. -/
+def scaledPowFlow (c : PosReal) (m : Real) (x : PosReal) : PosReal :=
+  Subtype.mk (c.1 * x.1 ^ m) (mul_pos c.property (Real.rpow_pos_of_pos x.property m))
+
+/-- BG_SLOPE_POWER_LAW: the bigeometric log-derivative of `c * x ^ m` is m for
+every positive c; the coefficient only shifts the log-log line. -/
+theorem bgDeriv_scaledPowFlow (c : PosReal) (m : Real) (x : PosReal) :
+    bgDeriv (scaledPowFlow c m) x = m := by
+  unfold bgDeriv
+  have hfun : (fun u : Real => Real.log ((scaledPowFlow c m) (logChart.symm u)).1)
+      = fun u : Real => Real.log c.1 + m * u := by
+    funext u
+    change Real.log (c.1 * (Real.exp u) ^ m) = Real.log c.1 + m * u
+    rw [Real.log_mul c.property.ne' (Real.rpow_pos_of_pos (Real.exp_pos u) m).ne',
+      Real.log_rpow (Real.exp_pos u), Real.log_exp]
+  rw [hfun]
+  have h : HasDerivAt (fun u : Real => Real.log c.1 + m * u) m (Real.log x.1) := by
+    simpa using ((hasDerivAt_id (Real.log x.1)).const_mul m).const_add (Real.log c.1)
+  exact h.deriv
+
+/-- Multiplicative form: `D_BG[c * x ^ m] = e ^ m`. -/
+theorem bgDerivMul_scaledPowFlow (c : PosReal) (m : Real) (x : PosReal) :
+    bgDerivMul (scaledPowFlow c m) x = Real.exp m := by
+  unfold bgDerivMul
+  rw [bgDeriv_scaledPowFlow]
 
 end GCC

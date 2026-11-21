@@ -277,6 +277,30 @@ example (f : ℝ → ℝ) (a : ℝ) :
       = a * deriv f a / f a :=
   f007_bigeometric f a
 
+-- 2026-11-21 registry sync. F007 reads the weight v at the argument a.
+-- Known-bad discriminator: under the historical v (f a) reading this value
+-- is v (f 0) = 1, not 0, so the example stops elaborating if F007 reverts.
+example : f007Deriv (fun _ => 1) id id id (fun x => x + 1) 0 = 0 := by
+  rw [f007_meta]
+  simp
+
+-- meta-derivative linearity with non-constant weights
+example (f g : Real -> Real) (a : Real)
+    (hf : DifferentiableAt Real f a) (hg : DifferentiableAt Real g a) :
+    metaDeriv (fun _ => 2) (fun x => x) (fun x => f x + g x) a
+      = metaDeriv (fun _ => 2) (fun x => x) f a + metaDeriv (fun _ => 2) (fun x => x) g a :=
+  metaDeriv_add hf hg
+
+-- geometric product rule, concrete: D_G[exp * exp](0) = e * e
+example : geomDeriv (fun x => Real.exp x * Real.exp x) 0 = Real.exp 1 * Real.exp 1 := by
+  rw [geomDeriv_mul (f := Real.exp) (g := Real.exp) Real.differentiableAt_exp
+    Real.differentiableAt_exp (Real.exp_ne_zero 0) (Real.exp_ne_zero 0)]
+  simp [geomDeriv, Real.deriv_exp]
+
+-- bigeometric power law with coefficient 5: slope 3 at x = 2
+example : bgDeriv (scaledPowFlow (Subtype.mk 5 (by norm_num)) 3) (Subtype.mk 2 (by norm_num)) = 3 :=
+  bgDeriv_scaledPowFlow _ 3 _
+
 -- the audit tombstone: the corrected odd square root is a genuine chart;
 -- both round trips hold by construction (the Python original failed them)
 example (x : ℝ) : signSqrtChart.symm (signSqrtChart x) = x :=
