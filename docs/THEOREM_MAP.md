@@ -190,3 +190,23 @@ elaborate if the parent theorem's typeclass assumptions are wrong.
 |---|---|---|
 | `signSqrt` / `signSqrtInv` | odd square root and its genuine inverse | `SignedSqrt` (corrected generator) |
 | `signSqrtChart` | the corrected odd sqrt IS a chart: both round trips proved - the proofs Python's old `Sqrt` silently failed | `test_generator_round_trip` |
+
+## 5. GccLeanLab/LaneC.lean (Lane C3 registry entries, 2026-11-22)
+
+Registry: meta-calculus-portfolio docs/FORMULA_CLAIMS.json (Kramers-Wannier:
+docs/HONEST-STATUS.md section 8). Scope column = how the Lean statement
+differs from the registry wording.
+
+| Registry id | Declarations | Scope difference from the registry wording |
+|---|---|---|
+| F008 (refuted) | `Sym2`, `eigDisc`, `eigHi`, `eigLo`, `eigDisc_sq`, `det_sub_eigHi`, `det_sub_eigLo`, `gap2`, `F008Claim`, `F008HistoricalClaim`, `f008P1`, `f008P2`, `f008_mix`, `gap2_f008P1`, `gap2_f008P2`, `gap2_f008_mix`, `f008_sym`, `f008_refuted`, `f008_historical_refuted` | Claim stated for two symmetric 2x2 real factors whose product is also symmetric (the guarded normal scope); n-factor and n x n versions are not stated, but a two-factor counterexample already refutes the general claim. `gap2` is `spectral_gap` from simulations/spectral_gap_verification.py (second minus first of the sorted absolute eigenvalues) on 2x2 input, with eigenvalues in closed form; `det_sub_eigHi/Lo` check they are characteristic roots. Counterexample diag(1,2), diag(2,1): component gaps 1 and 1, composed gap 0. Not a Markov or Laplacian matrix pair; the grid's nine counterexamples are separate numerical evidence. |
+| META_FTC_I | `metaIntegral`, `meta_ftc_I` | Meta-integral taken as `int_r^s u f` (limit of `f(a_i) * meta_measure_u`), meta-derivative `metaDeriv` from MetaCalculus.lean. Hypotheses: u continuous and positive everywhere (META_WEIGHT_DOMAIN; v needs none), f continuous on [r, s]; conclusion at every x in the open interval (r, s), matching "on the interior". |
+| META_FTC_II | `metaChange`, `meta_ftc_II`, `metaChange_one` | Meta-change taken in the registry's integral form `int_r^s v h'` (META_CHANGE_ARGUMENT), so the theorem is a pointwise identity needing only u > 0; it holds for every h because both sides use the same `deriv h`. Grossman's partition-sum definition of meta-change is not formalized. `metaChange_one` adds the analytic content for v = 1: meta-change = h s - h r for h differentiable on [r, s] with integrable derivative. |
+| LANE_EMDEN_N5_REGULAR | `laneEmdenN5`, `laneEmdenN5_pos`, `laneEmdenN5_hasDerivAt`, `laneEmdenN5_deriv_apply`, `laneEmdenN5_deriv`, `laneEmdenN5_sq_mul`, `laneEmdenN5_ode`, `laneEmdenN5_initial` | theta written as `(sqrt(1 + xi^2/3))^-1`. ODE `theta'' + 2 theta'/xi + theta^5 = 0` proved for every real xi /= 0 (registry: xi >= 0); at xi = 0 the 2 theta'/xi term is singular and is not formalized as a limit. Initial conditions theta(0) = 1, theta'(0) = 0 proved; uniqueness of the regular solution is not. |
+| F005 | `NonzeroReal`, `recipChart`, `recipChart_apply`, `recipChart_symm`, `recipChart_involutive`, `recip_injOn`, `recip_hasDerivAt`, `logChart_recip` | Registry states only `alpha(x) = 1/x`; Lean adds what meta_calculus/core/generators.py `Reciprocal` implements: a chart (Equiv) on the nonzero reals that is its own inverse, injectivity on x /= 0, derivative `-(1/x)*(1/x)`, and negation in the log chart on positive reals. Python returns NaN at 0; Lean's `0^-1 = 0` is excluded by the domain. |
+| Kramers-Wannier dual map (HONEST-STATUS 8; no registry id) | `kwDual`, `kwDual_spec`, `kwDual_pos`, `kwDual_unique`, `kwDual_kwDual`, `kwDual_eq_self_iff`, `kwCritical`, `kwCritical_pos`, `sinh_two_kwCritical`, `kwDual_kwCritical`, `kwDual_eq_self_iff_critical` | `K* = arsinh(1/sinh 2K)/2` for K > 0: satisfies sinh 2K sinh 2K* = 1, is the unique such coupling, is positive, is an involution; self-dual iff sinh 2K = 1 iff K = log(1 + sqrt 2)/2. The Onsager free-energy duality is not formalized (research-level; stays a numerical check). |
+
+Non-vacuity: each target had a deliberately false variant (wrong composed
+gap, D g = f without v, u in place of v in the meta-change, theta^4 in place
+of theta^5, derivative sign flipped, sqrt 3 in place of sqrt 2) compiled with
+the same proof script; all six failed, then were removed.
