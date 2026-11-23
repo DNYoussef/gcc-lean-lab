@@ -17,6 +17,7 @@ Test philosophy, matching the relay's own doctrine:
 
 import GccLeanLab.Capstone
 import GccLeanLab.MetaCalculus
+import GccLeanLab.LaneC
 
 namespace GCC.Tests
 
@@ -277,11 +278,65 @@ example (f : ℝ → ℝ) (a : ℝ) :
       = a * deriv f a / f a :=
   f007_bigeometric f a
 
+-- 2026-11-21 registry sync. F007 reads the weight v at the argument a.
+-- Known-bad discriminator: under the historical v (f a) reading this value
+-- is v (f 0) = 1, not 0, so the example stops elaborating if F007 reverts.
+example : f007Deriv (fun _ => 1) id id id (fun x => x + 1) 0 = 0 := by
+  rw [f007_meta]
+  simp
+
+-- meta-derivative linearity with non-constant weights
+example (f g : Real -> Real) (a : Real)
+    (hf : DifferentiableAt Real f a) (hg : DifferentiableAt Real g a) :
+    metaDeriv (fun _ => 2) (fun x => x) (fun x => f x + g x) a
+      = metaDeriv (fun _ => 2) (fun x => x) f a + metaDeriv (fun _ => 2) (fun x => x) g a :=
+  metaDeriv_add hf hg
+
+-- geometric product rule, concrete: D_G[exp * exp](0) = e * e
+example : geomDeriv (fun x => Real.exp x * Real.exp x) 0 = Real.exp 1 * Real.exp 1 := by
+  rw [geomDeriv_mul (f := Real.exp) (g := Real.exp) Real.differentiableAt_exp
+    Real.differentiableAt_exp (Real.exp_ne_zero 0) (Real.exp_ne_zero 0)]
+  simp [geomDeriv, Real.deriv_exp]
+
+-- bigeometric power law with coefficient 5: slope 3 at x = 2
+example : bgDeriv (scaledPowFlow (Subtype.mk 5 (by norm_num)) 3) (Subtype.mk 2 (by norm_num)) = 3 :=
+  bgDeriv_scaledPowFlow _ 3 _
+
 -- the audit tombstone: the corrected odd square root is a genuine chart;
 -- both round trips hold by construction (the Python original failed them)
 example (x : ℝ) : signSqrtChart.symm (signSqrtChart x) = x :=
   signSqrtChart.symm_apply_apply x
 example (y : ℝ) : signSqrtChart (signSqrtChart.symm y) = y :=
   signSqrtChart.apply_symm_apply y
+
+/-! ## Lane C3 registry entries (LaneC.lean, 2026-11-22) -/
+
+-- F008 counterexample: component gaps 1 and 1, composed gap 0, all in scope
+example : gap2 f008P1 = 1 ∧ gap2 f008P2 = 1 ∧ gap2 (f008P2 * f008P1) = 0 :=
+  ⟨gap2_f008P1, gap2_f008P2, gap2_f008_mix⟩
+example : ¬ F008Claim := f008_refuted
+
+-- META_FTC_I with u = 1, v = 2, f = id on [0, 1]: D g (1/2) = 2 * (1/2)
+example : metaDeriv (fun _ => 1) (fun _ => 2)
+    (fun t => metaIntegral (fun _ => 1) id 0 t) (1 / 2) = 2 * id (1 / 2) :=
+  meta_ftc_I (s := 1) continuous_const (fun _ => one_pos) continuousOn_id
+    ⟨by norm_num, by norm_num⟩
+
+-- META_FTC_II with non-constant output weight
+example : metaIntegral (fun _ => 2) (metaDeriv (fun _ => 2) (fun x => x) Real.exp) 0 1
+    = metaChange (fun x => x) Real.exp 0 1 :=
+  meta_ftc_II 0 1 (fun _ => two_pos)
+
+-- LANE_EMDEN_N5_REGULAR at xi = 1, and the regular start
+example : deriv (deriv laneEmdenN5) 1 + 2 * deriv laneEmdenN5 1 / 1
+    + laneEmdenN5 1 ^ 5 = 0 := laneEmdenN5_ode one_ne_zero
+example : laneEmdenN5 0 = 1 := laneEmdenN5_initial.1
+
+-- F005: the reciprocal chart is its own inverse
+example (x : NonzeroReal) : recipChart (recipChart x) = x := recipChart_involutive x
+
+-- Kramers-Wannier: involution at K = 1; K_c is self-dual
+example : kwDual (kwDual 1) = 1 := kwDual_kwDual one_pos
+example : kwDual kwCritical = kwCritical := kwDual_kwCritical
 
 end GCC.Tests
