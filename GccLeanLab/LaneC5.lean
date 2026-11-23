@@ -596,13 +596,14 @@ Newtonian hydrostatic equilibrium `P' = -G m rho / r^2`, `m' = 4 pi r^2 rho`
 with the polytrope `rho = rho_c theta^n`, `P = K_c theta^(n+1)`
 (`K_c = K rho_c^(1+1/n)`) on an interval `0 < r < R` where theta > 0 reduces,
 under `r = a xi` with `a^2 = (n+1) K_c / (4 pi G rho_c^2)`, to the stated ODE.
-n is a natural number. Existence of equilibria and the solver-behavior
-claims are not formalized. -/
+n is a real index with n > -1 (so n + 1 > 0 and the scale a^2 is positive);
+the powers are `Real.rpow`, taken only at theta > 0, so n = 1.5 is covered.
+Existence of equilibria and the solver-behavior claims are not formalized. -/
 
 /-- Equilibrium gives the ODE in r. -/
-theorem laneEmden_radial {G Kc rhoc R : Real} {n : Nat}
+theorem laneEmden_radial {G Kc rhoc R n : Real}
     {theta theta1 theta2 m P rho : Real -> Real}
-    (hG : 0 < G) (hK : 0 < Kc) (hrc : 0 < rhoc)
+    (hG : 0 < G) (hK : 0 < Kc) (hrc : 0 < rhoc) (hn : -1 < n)
     (htheta : forall r, 0 < r -> r < R -> HasDerivAt theta (theta1 r) r)
     (htheta1 : forall r, 0 < r -> r < R -> HasDerivAt theta1 (theta2 r) r)
     (hpos : forall r, 0 < r -> r < R -> 0 < theta r)
@@ -613,24 +614,25 @@ theorem laneEmden_radial {G Kc rhoc R : Real} {n : Nat}
     {r : Real} (hr : 0 < r) (hrR : r < R) :
     theta2 r + 2 * theta1 r / r
       + 4 * Real.pi * G * rhoc ^ 2 / ((n + 1) * Kc) * theta r ^ n = 0 := by
-  have hn1 : (0 : Real) < n + 1 := by positivity
+  have hn1 : Ne (n + 1) 0 := by intro h; linarith
+  have hGr : Ne (G * rhoc) 0 := mul_ne_zero hG.ne' hrc.ne'
   -- mass from the two expressions for P'
   have hm : forall s, 0 < s -> s < R ->
       m s = -(Kc * (n + 1)) / (G * rhoc) * (s ^ 2 * theta1 s) := by
     intro s hs hsR
-    have hPpoly : HasDerivAt P (Kc * ((n + 1 : Nat) * theta s ^ n * theta1 s)) s := by
-      have h := ((htheta s hs hsR).pow (n + 1)).const_mul Kc
-      rw [Nat.add_sub_cancel] at h
+    have hPpoly : HasDerivAt P (Kc * (theta1 s * (n + 1) * theta s ^ n)) s := by
+      have h := ((htheta s hs hsR).rpow_const (p := n + 1)
+        (Or.inl (hpos s hs hsR).ne')).const_mul Kc
+      rw [add_sub_cancel_right] at h
       refine h.congr_of_eventuallyEq ?_
       exact Filter.eventually_of_mem (Ioo_mem_nhds hs hsR)
         (fun y hy => hpoly y hy.1 hy.2)
     have heq := hPpoly.unique (hhyd s hs hsR)
-    rw [hrho s hs hsR] at heq
-    have htn : 0 < theta s ^ n := pow_pos (hpos s hs hsR) n
-    push_cast at heq
-    field_simp at heq
-    field_simp
-    nlinarith [htn, heq]
+    rw [hrho s hs hsR, eq_div_iff (pow_ne_zero 2 hs.ne')] at heq
+    have htn : 0 < theta s ^ n := Real.rpow_pos_of_pos (hpos s hs hsR) n
+    rw [div_mul_eq_mul_div, eq_div_iff hGr]
+    refine (mul_left_inj' htn.ne').mp ?_
+    linear_combination heq
   have hmd : HasDerivAt m
       (-(Kc * (n + 1)) / (G * rhoc) * (2 * r * theta1 r + r ^ 2 * theta2 r)) r := by
     have h' : HasDerivAt (fun s => -(Kc * (n + 1)) / (G * rhoc) * (s ^ 2 * theta1 s))
@@ -644,16 +646,23 @@ theorem laneEmden_radial {G Kc rhoc R : Real} {n : Nat}
     exact Filter.eventually_of_mem (Ioo_mem_nhds hr hrR) (fun y hy => hm y hy.1 hy.2)
   have heq := hmd.unique (hmass r hr hrR)
   rw [hrho r hr hrR] at heq
-  field_simp at heq
-  field_simp
-  nlinarith [heq]
+  have hr0 : Ne r 0 := hr.ne'
+  have hKc : Ne Kc 0 := hK.ne'
+  calc theta2 r + 2 * theta1 r / r
+        + 4 * Real.pi * G * rhoc ^ 2 / ((n + 1) * Kc) * theta r ^ n
+      = -(G * rhoc) / (Kc * (n + 1) * r ^ 2)
+          * (-(Kc * (n + 1)) / (G * rhoc) * (2 * r * theta1 r + r ^ 2 * theta2 r)
+            - 4 * Real.pi * r ^ 2 * (rhoc * theta r ^ n)) := by
+        field_simp
+        ring
+    _ = 0 := by rw [heq, sub_self, mul_zero]
 
 /-- LANE_EMDEN_EQUATION: in `xi = r / a`, `Theta(xi) = theta(a xi)` satisfies
 `Theta'' + 2 Theta'/xi + Theta^n = 0` with `Theta' = a theta'(a xi)`,
-`Theta'' = a^2 theta''(a xi)`. -/
-theorem laneEmden_equation {G Kc rhoc R a : Real} {n : Nat}
+`Theta'' = a^2 theta''(a xi)`, for every real index n > -1. -/
+theorem laneEmden_equation {G Kc rhoc R a n : Real}
     {theta theta1 theta2 m P rho : Real -> Real}
-    (hG : 0 < G) (hK : 0 < Kc) (hrc : 0 < rhoc) (ha : 0 < a)
+    (hG : 0 < G) (hK : 0 < Kc) (hrc : 0 < rhoc) (hn : -1 < n) (ha : 0 < a)
     (hscale : a ^ 2 = (n + 1) * Kc / (4 * Real.pi * G * rhoc ^ 2))
     (htheta : forall r, 0 < r -> r < R -> HasDerivAt theta (theta1 r) r)
     (htheta1 : forall r, 0 < r -> r < R -> HasDerivAt theta1 (theta2 r) r)
@@ -677,9 +686,9 @@ theorem laneEmden_equation {G Kc rhoc R a : Real} {n : Nat}
     convert h using 1
     ring
   next =>
-    have hode := laneEmden_radial hG hK hrc htheta htheta1 hpos hrho hpoly hmass hhyd hr hxiR
+    have hode := laneEmden_radial hG hK hrc hn htheta htheta1 hpos hrho hpoly hmass hhyd hr hxiR
     have hpi : 0 < Real.pi := Real.pi_pos
-    have hn1 : (0 : Real) < n + 1 := by positivity
+    have hn1 : Ne (n + 1) 0 := by intro h; linarith
     have hc : a ^ 2 * (4 * Real.pi * G * rhoc ^ 2 / ((n + 1) * Kc)) = 1 := by
       rw [hscale]
       field_simp
